@@ -1,0 +1,211 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+<title> Storing sessions in cookies | PerlDancer Advent Calendar</title>
+<link rel="stylesheet" href="/css/style.css" />
+<link rel="alternate" type="application/rss+xml" title="All Articles " href="/feed/2010" /> 
+
+
+<!-- Grab Google CDN's jQuery. fall back to local if necessary -->
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js" type="text/javascript"></script>
+<script type="text/javascript">/* <![CDATA[ */
+    !window.jQuery && document.write('<script src="/javascripts/jquery.js"><\/script>')
+/* ]]> */</script>
+
+<!-- Prettyfy -->
+<link href="/css/prettify.css" type="text/css" rel="stylesheet" />
+<script type="text/javascript" src="/javascripts/prettify.js"></script>
+
+</head>
+<body onload="prettyPrint()">
+<div id="page">
+
+<div id="sidebar">
+<a href="/" class="homelink">Dancer Advent Calendar</a><br />
+
+<p>
+The PerlDancer Advent Calendar is a community-driven project that aims 
+to showcase the Dancer Perl web framework.
+</p>
+
+<p>
+Each day of December until Christmas, one article about Dancer. Stay tuned for new moves!
+</p>
+
+<ul id="sidebar-items">
+<li>
+    <h3>About Dancer</h3>
+    <ul class="links">
+        <li><a href="http://www.perldancer.org/">Dancer homepage</a></li>
+        <li><a href="http://twitter.com/PerlDancer">Official Twitter</a></li>
+        <li><a href="http://github.com/PerlDancer/Dancer">Dancer on GitHub</a></li>
+        <li><a href="http://github.com/PerlDancer/Dancer2">Dancer 2 on GitHub</a></li>
+        <li><a class="feed" href="/feed/2010">RSS</a></li>
+    </ul>
+</li>
+</ul>
+</div>
+
+
+<div id="content">
+<div class="pod-document"><h1><a name="storing_sessions_in_cookies"></a>Storing sessions in cookies</h1>
+
+<h2><a name="history_of_stateful_http"></a>History of stateful HTTP</h2>
+
+<p>Since HTTP is a stateless protocol each request-response pair
+is independent. There's no state kept between responses (hence <i>stateless</i>).
+This feature of HTTP turned out to be both a blessing that allowed
+the web to scale so well and a hoop to jump through for developers of
+websites where the design requires keeping of state between page loads.</p>
+<p>Well, this deficiency is a thing of the past since Netscape invented
+HTTP cookies in 1994. Cookies provide an elegant way of emulating
+application state by transferring a piece of data from server
+out-of-band and keeping it on the client side. This piece is tied to a
+particular set of web pages via its parameters and is sent alongside
+each request from client back to server so that the server could
+restore the state and serve the request in a particular context.</p>
+<p>Early uses of cookies included shopping carts that stored a list of
+selected goods right in the cookie until the purchase was completed.
+Then personalised web came and lots of websites introduced "my"
+sections (e.g. My Yahoo) which required users to sign up/sign in to
+their accounts. Storing login credentials in cookies is
+inherently insecure both for users who risk losing them to
+eavesdroppers on open networks and for websites because cookies 
+could be tampered with by malicious clients.</p>
+<p>So sessions emerged. The trick is to store data securely in the
+database while delivering a cookie with only a session identifier.
+The identifiers are taken from a huge space so that guessing or
+brute-forcing become infeasible. This is the most popular way of
+implementing statefulness over HTTP since then.</p>
+<h2><a name="problems_with_sessions"></a>Problems with sessions</h2>
+
+<p>The problems arise with load. Each and every request inside a session
+required a database query to retrieve the session data by its
+identifier or to prove the session invalid. Usability concerns require
+sessions to be long (all those "remember me on this computer"
+check boxes) and that means a session store should have room for a huge
+number of sessions while being sufficiently fast to serve a query for
+each page hit.</p>
+<p>Modern websites try to work around session storage problems by using
+special storages like <i>Memcached</i> and there's a
+<a href="https://metacpan.org/module/Dancer::Session::Memcached">Dancer::Session::Memcached</a> plugin to implement such a scheme in a
+Dancer application. That usually means replacing the database problems
+with Memcached problems, like Memcached not being persistent between
+reboots or not guaranteeing storage for any long period of time due to
+being a cache and not a general purpose database.</p>
+<h2><a name="using_cookies_more"></a>Using cookies more</h2>
+
+<p>There's an old Russian saying - "everything new is well-forgotten
+old" and that is exactly what is going on with storing sessions in
+cookies like in the old times of first shopping carts. The trick is
+that there is another good way of securing your sessions which does
+not involve any database and that is <i>cryptography</i>. Server stores
+session data on the client side in encrypted cookies.</p>
+<p>Basically, server sends this HTTP header:</p>
+<pre class="prettyprint">Set-Cookie: s=base64(encrypt(serialize($session_hash)))</pre>
+
+<p>Client will return this cookie with each subsequent request and server
+will check the validity of the data by reversing all the operations it
+performed when creating the cookie and verifying the embedded
+checksum. It will then have the session data readily available without
+any database access. Mismatched checksum means invalid (same as
+expired) session and also gives a hint about a tampering attempt going
+on.</p>
+<p>Little can be added to this. This method is not new and is in
+production use on some of the most loaded websites in the world for
+years. It is a kind of well-kept secret of doing secure stateful HTTP
+under heavy load. Personally, I tend to use it everywhere I can
+because it is also simpler than creating a server-side session store.</p>
+<p>The reason it is not used more widely, I think, lies in the frameworks
+which power a large percentage of all new websites and do not
+implement this mechanism. Fortunately, Dancer is not one of them.</p>
+<h2><a name="using_cookies_to_store_sessions_in_dancer"></a>Using cookies to store sessions in Dancer</h2>
+
+<p>The session plugin <a href="https://metacpan.org/module/Dancer::Session::Cookie">Dancer::Session::Cookie</a> implements encrypted
+cookies storage for sessions in a Dancer application. I wrote it more
+than a year ago and it had very little changes since then because it's
+very simple and there's little room for bugs to fix or for
+improvements.</p>
+<p>To install the plugin you will need three modules from CPAN which are
+not in base perl distribution: <a href="https://metacpan.org/module/Crypt::Rijndael">Crypt::Rijndael</a>, <a href="https://metacpan.org/module/Crypt::CBC">Crypt::CBC</a> for
+encryption/decryption and <a href="https://metacpan.org/module/String::CRC32">String::CRC32</a> for the checksum which is
+used to validate sessions.</p>
+<p>After installation, add these lines to your <i>config.yml</i>:</p>
+<pre class="prettyprint">session: "cookie"
+session_cookie_key: "random encryption key"</pre>
+
+<p>You should initialise your <b>session_cookie_key</b> with a random string of 16
+or more characters right away to ensure the uniqueness of your
+encryption. You should also implement protection for <i>config.yml</i> by
+setting some permissions and not pushing it to GitHub :) Compromised
+encryption key may potentially lead to all sorts of bad things.</p>
+<p>Session expiration may be implemented on both sides. First, by using a
+built-in expiration features of HTTP cookies. But since the client is
+not trusted you can also save session creation time right inside that
+session and check it when you validate sessions. Automatic expiration is not
+implemented in <a href="https://metacpan.org/module/Dancer::Session::Cookie">Dancer::Session::Cookie</a>, patches are welcome.</p>
+<p>There's a limit on the size of cookies but it varies across browsers.
+A good practical limit to use is 4096 bytes - supported in all major
+browsers for a long time. This is plenty of space and if your sessions
+do not fit this is probably a sign of something strange happening.</p>
+<h2><a name="see_also"></a>SEE ALSO</h2>
+
+<p>See <a href="https://metacpan.org/module/Dancer::Session">Dancer::Session</a> for details about session usage in route handlers.</p>
+<p>See <a href="https://metacpan.org/module/Plack::Middleware::Session::Cookie">Plack::Middleware::Session::Cookie</a>,
+<a href="https://metacpan.org/module/Catalyst::Plugin::CookiedSession">Catalyst::Plugin::CookiedSession</a>, <a href="https://metacpan.org/module/Mojolicious::Controller/session">Mojolicious::Controller/session</a> for
+alternative implementation of this mechanism.</p>
+<h2><a name="author"></a>Author</h2>
+
+<p>This article has been written by Alex Kapranoff for the Perl Dancer Advent
+Calendar 2010.</p>
+<h2><a name="copyright"></a>Copyright</h2>
+
+<p>Copyright (C) 2010 by Alex Kapranoff <code>&lt;kappa@cpan.org&gt;</code></p>
+</div>
+
+ <div id="disqus_thread"></div>
+    <script type="text/javascript">
+        /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+        var disqus_shortname = 'danceradvent'; // required: replace example with your forum shortname
+
+        /* * * DON'T EDIT BELOW THIS LINE * * */
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+
+
+
+</div>
+
+
+
+<div id="footer">
+Powered by the  
+<a href="http://perldancer.org/" title="Perl Dancer - Perl web framework">
+Dancer Perl web framework</a>
+</div>
+</div>
+
+
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-25174467-2']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+</body>
+</html>

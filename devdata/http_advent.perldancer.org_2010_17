@@ -1,0 +1,232 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+<title> Authentication with Twitter OAuth | PerlDancer Advent Calendar</title>
+<link rel="stylesheet" href="/css/style.css" />
+<link rel="alternate" type="application/rss+xml" title="All Articles " href="/feed/2010" /> 
+
+
+<!-- Grab Google CDN's jQuery. fall back to local if necessary -->
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js" type="text/javascript"></script>
+<script type="text/javascript">/* <![CDATA[ */
+    !window.jQuery && document.write('<script src="/javascripts/jquery.js"><\/script>')
+/* ]]> */</script>
+
+<!-- Prettyfy -->
+<link href="/css/prettify.css" type="text/css" rel="stylesheet" />
+<script type="text/javascript" src="/javascripts/prettify.js"></script>
+
+</head>
+<body onload="prettyPrint()">
+<div id="page">
+
+<div id="sidebar">
+<a href="/" class="homelink">Dancer Advent Calendar</a><br />
+
+<p>
+The PerlDancer Advent Calendar is a community-driven project that aims 
+to showcase the Dancer Perl web framework.
+</p>
+
+<p>
+Each day of December until Christmas, one article about Dancer. Stay tuned for new moves!
+</p>
+
+<ul id="sidebar-items">
+<li>
+    <h3>About Dancer</h3>
+    <ul class="links">
+        <li><a href="http://www.perldancer.org/">Dancer homepage</a></li>
+        <li><a href="http://twitter.com/PerlDancer">Official Twitter</a></li>
+        <li><a href="http://github.com/PerlDancer/Dancer">Dancer on GitHub</a></li>
+        <li><a href="http://github.com/PerlDancer/Dancer2">Dancer 2 on GitHub</a></li>
+        <li><a class="feed" href="/feed/2010">RSS</a></li>
+    </ul>
+</li>
+</ul>
+</div>
+
+
+<div id="content">
+<div class="pod-document"><h1><a name="authentication_with_twitter_oauth"></a>Authentication with Twitter OAuth</h1>
+
+<p>In this article we'll see how to authenticate our users via Twitter's OAuth
+mechanism, using <a href="https://metacpan.org/module/Dancer::Plugin::Auth::Twitter">Dancer::Plugin::Auth::Twitter</a>.</p>
+<p>This plugin is based on <a href="https://metacpan.org/module/Net::Twitter">Net::Twitter</a> and as a bonus side-effect exports
+a <code>twitter</code> keyword to the application's namespace, allowing other
+route handlers to access the whole Twitter API on behalf of the authenticated 
+user.</p>
+<p>This article will show you how to use that plugin to build a Twitter app with
+Dancer.</p>
+<h2><a name="basic_oauth_principles"></a>Basic OAuth principles</h2>
+
+<p>Explaining how OAuth works is beyond the scope of this article, on the other
+hand, you don't really need to understand the underlying logic of it to follow
+what will be done in this article. All you need to understand is that
+authentication with OAuth works with such a workflow:</p>
+<ul>
+<li>
+<p>An unauthenticated user requests a page on your app</p>
+</li>
+<li>
+<p>The application requests an authentication URL from Twitter's API, providing
+its <code>consumer_key</code> and <code>consumer_secret</code> keys as well as a <code>callback URL</code>.</p>
+</li>
+<li>
+<p>The application bounces the user to the authentication URL it has got from
+Twitter.</p>
+</li>
+<li>
+<p>The user is redirected at Twitter and is prompted for allowing the application to
+access her profile and do actions on her behalf.</p>
+</li>
+<li>
+<p>When the user hits the <i>Allow</i> button, she's redirected back to the
+application, on the callback URL provided before.</p>
+</li>
+<li>
+<p>The user is back on the application, requesting the callback URL. The callback
+URL stores the user's information in a session and go back to the first
+route requested by the user.</p>
+</li>
+<li>
+<p>The user is now authenticated.</p>
+</li>
+</ul>
+<h2><a name="first_things_first"></a>First things first</h2>
+
+<p>Before starting we need to register a Twitter application so we can have our
+<code>consumer_key</code> and <code>consumer_secret</code> keys.</p>
+<p>Anyone can register a Twitter application at <a href="http://dev.twitter.com">http://dev.twitter.com</a>, just
+make sure it is a <i>Web</i> application.</p>
+<h2><a name="configuring_the_plugin"></a>Configuring the plugin</h2>
+
+<p>First, our plugin needs a bit of configuration, as the application will need to
+know these <code>consumer_key</code> and <code>consumer_secret</code> keys.</p>
+<p>Each Dancer plugin can store their configuration bits inside the main app's
+configuration, under <code>plugins/PluginName</code>. PluginName being the name of the
+plugin module minus the <code>Dancer::Plugin</code> namespace.</p>
+<p>So as our plugin is named <code>Dancer::Plugin::Auth::Twitter</code> we'll be able to
+store our configuration under <code>plugins/Auth::Twitter</code> :</p>
+<pre class="prettyprint"># config.yml
+....
+plugins:
+  "Auth::Twitter":
+    consumer_key: "abcd..."
+    consumer_secret: "1234..."
+    callback_url: "http://localhost:3000/auth/twitter/callback"</pre>
+
+<p>That's it! Our plugin is configured. We can now use it in our code.</p>
+<h3><a name="initialization"></a>Initialization</h3>
+
+<p>At the very first, we must initialize the plugin (basically it needs to read
+the configuration and create its internal <a href="https://metacpan.org/module/Net::Twitter">Net::Twitter</a> object). So our
+application must start with something like the following:</p>
+<pre class="prettyprint">package MyApp;
+use Dancer;
+use Dancer::Plugin::Auth::Twitter;
+
+auth_twitter_init();</pre>
+
+<p>At this point, if your app doesn't provide all the configuration bits needed by
+the plugin, it will throw an exception.</p>
+<h3><a name="filtering_unauthenticated_users"></a>Filtering unauthenticated users</h3>
+
+<p>Implementing an authentication system basically relies on a before filter,
+where you check if the user is authenticated, and if not, redirect her to an
+authentication URL.</p>
+<p>That is what we need to do here, and as you can see it's pretty
+straight-forward:</p>
+<pre class="prettyprint">before sub {
+    return if request-&gt;path =~ m{/auth/twitter/callback};
+    if (not session('twitter_user')) {
+        redirect auth_twitter_authenticate_url;
+    }
+};</pre>
+
+<p>This filter redirects any unauthenticated user to the authentication URL.
+Note that we don't want to do that redirection when the requested page is the
+callback URL defined by the plugin (this route handler is responsible for
+storing the authenticated user into the session).</p>
+<p>With our filter though, all our application routes expect an authenticated Twitter
+user, you could of course do something more clever to enable that filter only
+for a subset of your routes, but that is left as an exercise for the reader.</p>
+<h2><a name="playing_with_twitter"></a>Playing with Twitter</h2>
+
+<p>Well, at this point, we're done. Yes, it's that simple. The only work that is
+left to the developer is to provide a before filter that redirects
+unauthenticated users to <code>auth_twitter_authenticate_url</code> when
+appropriate. All the dirty work of communicating with Twitter is handled under
+the hood by <a href="https://metacpan.org/module/Dancer::Plugin::Auth::Twitter">Dancer::Plugin::Auth::Twitter</a>.</p>
+<p>So now, we can play with it, let's do a "Twitter hello world":</p>
+<pre class="prettyprint">get "/" =&gt; sub {
+    "Hello, ".session('twitter_user')-&gt;{'screen_name'};
+};</pre>
+
+<p>As our before filter will catch any unauthenticated user and redirect them to
+Twitter if needed, it's that simple.</p>
+<p>Note that the <a href="https://metacpan.org/module/Net::Twitter">Net::Twitter</a> object accessible via the <code>twitter</code> keyword
+allows you all that the Twitter ReST API provides, so your possibilities are
+endless.</p>
+<h2><a name="more_details"></a>More details</h2>
+
+<p>For more details about the plugin used in this article, you can check the
+example application that is shipped with <a href="https://metacpan.org/module/Dancer::Plugin::Auth::Twitter">Dancer::Plugin::Auth::Twitter</a> in
+the <code>example/</code> directory. It should be working out of the box.</p>
+<p>The plugin described in this article is a port of
+<a href="https://metacpan.org/module/Catalyst::Authentication::Credential::Twitter">Catalyst::Authentication::Credential::Twitter</a>, huge kudos go to its authors.</p>
+<h2><a name="author"></a>Author</h2>
+
+<p>This article has been written by Alexis Sukrieh for the Perl Dancer advent
+calendar 2010.</p>
+<h2><a name="copyright"></a>Copyright</h2>
+
+<p>Copyright (C) 2010 Alexis Sukrieh <code>&lt;sukria@sukria.net&gt;</code>.</p>
+</div>
+
+ <div id="disqus_thread"></div>
+    <script type="text/javascript">
+        /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+        var disqus_shortname = 'danceradvent'; // required: replace example with your forum shortname
+
+        /* * * DON'T EDIT BELOW THIS LINE * * */
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+
+
+
+</div>
+
+
+
+<div id="footer">
+Powered by the  
+<a href="http://perldancer.org/" title="Perl Dancer - Perl web framework">
+Dancer Perl web framework</a>
+</div>
+</div>
+
+
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-25174467-2']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+</body>
+</html>

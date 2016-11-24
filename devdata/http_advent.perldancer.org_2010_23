@@ -1,0 +1,241 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+<title> Dancer's ecosystem | PerlDancer Advent Calendar</title>
+<link rel="stylesheet" href="/css/style.css" />
+<link rel="alternate" type="application/rss+xml" title="All Articles " href="/feed/2010" /> 
+
+
+<!-- Grab Google CDN's jQuery. fall back to local if necessary -->
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js" type="text/javascript"></script>
+<script type="text/javascript">/* <![CDATA[ */
+    !window.jQuery && document.write('<script src="/javascripts/jquery.js"><\/script>')
+/* ]]> */</script>
+
+<!-- Prettyfy -->
+<link href="/css/prettify.css" type="text/css" rel="stylesheet" />
+<script type="text/javascript" src="/javascripts/prettify.js"></script>
+
+</head>
+<body onload="prettyPrint()">
+<div id="page">
+
+<div id="sidebar">
+<a href="/" class="homelink">Dancer Advent Calendar</a><br />
+
+<p>
+The PerlDancer Advent Calendar is a community-driven project that aims 
+to showcase the Dancer Perl web framework.
+</p>
+
+<p>
+Each day of December until Christmas, one article about Dancer. Stay tuned for new moves!
+</p>
+
+<ul id="sidebar-items">
+<li>
+    <h3>About Dancer</h3>
+    <ul class="links">
+        <li><a href="http://www.perldancer.org/">Dancer homepage</a></li>
+        <li><a href="http://twitter.com/PerlDancer">Official Twitter</a></li>
+        <li><a href="http://github.com/PerlDancer/Dancer">Dancer on GitHub</a></li>
+        <li><a href="http://github.com/PerlDancer/Dancer2">Dancer 2 on GitHub</a></li>
+        <li><a class="feed" href="/feed/2010">RSS</a></li>
+    </ul>
+</li>
+</ul>
+</div>
+
+
+<div id="content">
+<div class="pod-document"><h1><a name="dancer_s_ecosystem"></a>Dancer's ecosystem</h1>
+
+<p>Dancer's community is getting more important every day. Today, we will see
+some useful plugin or engines contributed from the community.</p>
+<h2><a name="templates"></a>Templates</h2>
+
+<h3><a name="dancer__template__tenjin"></a>Dancer::Template::Tenjin</h3>
+
+<p><a href="https://metacpan.org/module/Tenjin">Tenjin</a> is a fast and feature-full templating engine that can be used by
+Dancer for production purposes. In comparison to <a href="https://metacpan.org/module/Template::Toolkit">Template::Toolkit</a>, it is
+much more lightweight, has almost no dependencies, and supports embedded Perl
+code instead of defining its own language.</p>
+<p>(On CPAN: <a href="http://search.cpan.org/perldoc?Dancer::Template::Tenjin">http://search.cpan.org/perldoc?Dancer::Template::Tenjin</a>)</p>
+<h3><a name="dancer__template__tiny"></a>Dancer::Template::Tiny</h3>
+
+<p><a href="https://metacpan.org/module/Template::Tiny">Template::Tiny</a> is an implementation of a subset of <a href="https://metacpan.org/module/Template::Toolkit">Template::Toolkit</a>
+(the major parts) which takes much less memory and is faster. If you're only
+using the main functions of Template::Toolkit, you could use
+<a href="https://metacpan.org/module/Template::Tiny">Template::Tiny</a>. You can also seamlessly move back to <a href="https://metacpan.org/module/Template::Toolkit">Template::Toolkit</a>
+whenever you want.</p>
+<p>(On CPAN: <a href="http://search.cpan.org/perldoc?Dancer::Template::Tiny">http://search.cpan.org/perldoc?Dancer::Template::Tiny</a>)</p>
+<h3><a name="dancer__template__semantic"></a>Dancer::Template::Semantic</h3>
+
+<p>Template::Semantic is a template engine for XHTML/XML based on XML::LibXML
+that doesn't use any template syntax. This module takes pure XHTML/XML as a
+template, and uses XPath or CSS selectors to assign values.</p>
+<p>(On CPAN: <a href="http://search.cpan.org/perldoc?Dancer::Template::Semantic">http://search.cpan.org/perldoc?Dancer::Template::Semantic</a>)</p>
+<h3><a name="dancer__template__mason"></a>Dancer::Template::Mason</h3>
+
+<p>As you could have guessed, this is an interface between Dancer's template
+engine abstraction layer and the <a href="https://metacpan.org/module/HTML::Mason">HTML::Mason</a> templating system.</p>
+<p>(On CPAN: <a href="http://search.cpan.org/perldoc?Dancer::Template::Mason">http://search.cpan.org/perldoc?Dancer::Template::Mason</a>)</p>
+<h3><a name="dancer__template__xslate"></a>Dancer::Template::Xslate</h3>
+
+<p><a href="https://metacpan.org/module/Text::Xslate">Text::Xslate</a> is a template engine, tuned for persistent applications, safe
+as an HTML generator, and with rich features.</p>
+<p>The concept of Xslate is strongly influenced by <a href="https://metacpan.org/module/Text::MicroTemplate">Text::MicroTemplate</a> and
+Template-Toolkit 2, but the central philosophy of Xslate is different from
+them. That is, the philosophy is sandboxing that the template logic should not
+have no access outside the template beyond your permission.</p>
+<p>(On CPAN: <a href="http://search.cpan.org/perldoc?Dancer::Template::Xslate">http://search.cpan.org/perldoc?Dancer::Template::Xslate</a>)</p>
+<h2><a name="logger"></a>Logger</h2>
+
+<h3><a name="dancer__logger__syslog"></a>Dancer::Logger::Syslog</h3>
+
+<p>This module implements a logger engine that send log messages to <b>syslog</b>,
+through the <a href="https://metacpan.org/module/Sys::Syslog">Sys::Syslog</a> module.</p>
+<p>(On CPAN: <a href="http://search.cpan.org/perldoc?Dancer::Logger::Syslog">http://search.cpan.org/perldoc?Dancer::Logger::Syslog</a>)</p>
+<h3><a name="dancer__logger__psgi"></a>Dancer::Logger::PSGI</h3>
+
+<p>This class is an interface between your Dancer's application and
+<code>psgix.logger</code>. Message will be logged in whatever logger you decided to use
+in your <a href="https://metacpan.org/module/Plack">Plack</a> handler. If no logger is defined, nothing will be logged.</p>
+<p>(on CPAN/ <a href="http://search.cpan.org/perldoc?Dancer::Logger::PSGI">http://search.cpan.org/perldoc?Dancer::Logger::PSGI</a>)</p>
+<h3><a name="dancer__logger__spinner"></a>Dancer::Logger::Spinner</h3>
+
+<p>When using this logger and running your application in the terminal, you will
+see a text spinner running on each message it gets. If you have a page with a
+lot of request, and they will come in fast, you'll see the spinner running. If
+you have an app with very little requests in each page or if it is slow, the
+spinner will run slowly.</p>
+<p>(On CPAN: <a href="http://search.cpan.org/perldoc?Dancer::Logger::Spinner">http://search.cpan.org/perldoc?Dancer::Logger::Spinner</a>)</p>
+<h2><a name="plugins"></a>Plugins</h2>
+
+<h3><a name="dancer__plugin__rest"></a>Dancer::Plugin::REST</h3>
+
+<p>This plugin helps you write a RESTful web service with Dancer. This plugin will
+be detailed in another article about <b>REST</b>.</p>
+<p>(On CPAN: <a href="http://search.cpan.org/perldoc?Dancer::Plugin::REST">http://search.cpan.org/perldoc?Dancer::Plugin::REST</a>)</p>
+<h3><a name="dancer__plugin__params__normalization"></a>Dancer::Plugin::Params::Normalization</h3>
+
+<p>This plugin helps you make automatic transformations on requests' parameters,
+for instance, make them all lowercase. It has easy-to-use defaults, but can do
+complex and precise normalisation upon configuration.</p>
+<p>(On CPAN: <a href="http://search.cpan.org/perldoc?Dancer::Plugin::Params::Normalization">http://search.cpan.org/perldoc?Dancer::Plugin::Params::Normalization</a>)</p>
+<h3><a name="dancer__plugin__mongo"></a>Dancer::Plugin::Mongo</h3>
+
+<p><a href="https://metacpan.org/module/Dancer::Plugin::Mongo">Dancer::Plugin::Mongo</a> provides a wrapper around <b>MongoDB</b>. Add the
+appropriate configuration options to your <i>config.yml</i> and then you can access
+a MongoDB database using the <code>mongo</code> keyword.</p>
+<pre class="prettyprint">use Dancer;
+use Dancer::Plugin::Mongo;
+
+get '/widget/view/:id' =&gt; sub {
+    my $widget = mongo-&gt;database-&gt;table-&gt;find_one({ id =&gt; params-&gt;{id} });
+}</pre>
+
+<p>(On CPAN: <a href="http://search.cpan.org/perldoc?Dancer::Plugin::Mongo">http://search.cpan.org/perldoc?Dancer::Plugin::Mongo</a>)</p>
+<h3><a name="dancer__plugin__database"></a>Dancer::Plugin::Database</h3>
+
+<p>Provides an easy way to obtain a connected DBI database handle by simply
+calling the database keyword within your Dancer application.</p>
+<pre class="prettyprint">use Dancer;
+use Dancer::Plugin::Database;
+
+get '/widget/view/:id' =&gt; sub {
+    my $sth = database-&gt;prepare( 'select * from widgets where id = ?' );
+    $sth-&gt;execute(params-&gt;{id});
+    template 'display_widget', { widget =&gt; $sth-&gt;fetchrow_hashref };
+};</pre>
+
+<p>(On CPAN: <a href="http://search.cpan.org/perldoc?Dancer::Plugin::Database">http://search.cpan.org/perldoc?Dancer::Plugin::Database</a>)</p>
+<h3><a name="dancer__plugin__dbic"></a>Dancer::Plugin::DBIC</h3>
+
+<p>This plugin provides an easy way to obtain <a href="https://metacpan.org/module/DBIx::Class::ResultSet">DBIx::Class::ResultSet</a> instances
+via the the function schema(), which it automatically imports. You just need
+to point to a DSN in your Dancer configuration file. So you no longer have to
+write boilerplate DBIC setup code.</p>
+<pre class="prettyprint">use Dancer;
+use Dancer::Plugin::DBIC;
+
+get '/profile/:id' =&gt; sub {
+    my $user = schema-&gt;resultset('Users')-&gt;find(params-&gt;{id});
+    template user_profile =&gt; { user =&gt; $user };
+};</pre>
+
+<p>(On CPAN: <a href="http://search.cpan.org/perldoc?Dancer::Plugin::DBIC">http://search.cpan.org/perldoc?Dancer::Plugin::DBIC</a>)</p>
+<h3><a name="dancer__plugin__sitemap"></a>Dancer::Plugin::SiteMap</h3>
+
+<p>Basically, this plugin predefines a pair of routes for you saving you the
+work in your Dancer application.</p>
+<p>The two routes that are defined when called, obtain a list of routes 
+that are in your Dancer application within Dancer's registry.  This list 
+is then simply formated appropriately for each route.</p>
+<p>For HTML an unordered list containing anchor tags is output within your
+applications main layout. This can then be styled with CSS to suit.</p>
+<p>For the XML site map, it outputs... Yep you guessed it! An XML site map.</p>
+<p>As these routes work on a on-demand principle, there is no need to 
+continually update your site map, <a href="https://metacpan.org/module/Dancer::Plugin::SiteMap">Dancer::Plugin::SiteMap</a> keeps it 
+up-to-date for you :-)</p>
+<pre class="prettyprint">use Dancer;
+use Dancer::Plugin::SiteMap;</pre>
+
+<p>That's it! Your Dancer App now has <code>/sitemap</code> and <code>/sitemap.xml</code>
+routes.</p>
+<h2><a name="author"></a>Author</h2>
+
+<p>This article has been written by Franck Cuny for the Perl Dancer Advent
+Calendar 2010.</p>
+<h2><a name="copyright"></a>Copyright</h2>
+
+<p>Copyright (C) 2010 by Franck Cuny <code>&lt;franck@lumberjaph.net&gt;</code>,
+James Ronan <code>&lt;james@ronanweb.co.uk&gt;</code></p>
+</div>
+
+ <div id="disqus_thread"></div>
+    <script type="text/javascript">
+        /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+        var disqus_shortname = 'danceradvent'; // required: replace example with your forum shortname
+
+        /* * * DON'T EDIT BELOW THIS LINE * * */
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+
+
+
+</div>
+
+
+
+<div id="footer">
+Powered by the  
+<a href="http://perldancer.org/" title="Perl Dancer - Perl web framework">
+Dancer Perl web framework</a>
+</div>
+</div>
+
+
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-25174467-2']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+</body>
+</html>

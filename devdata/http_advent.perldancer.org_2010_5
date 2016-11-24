@@ -1,0 +1,249 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+<title> How to write a plugin | PerlDancer Advent Calendar</title>
+<link rel="stylesheet" href="/css/style.css" />
+<link rel="alternate" type="application/rss+xml" title="All Articles " href="/feed/2010" /> 
+
+
+<!-- Grab Google CDN's jQuery. fall back to local if necessary -->
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js" type="text/javascript"></script>
+<script type="text/javascript">/* <![CDATA[ */
+    !window.jQuery && document.write('<script src="/javascripts/jquery.js"><\/script>')
+/* ]]> */</script>
+
+<!-- Prettyfy -->
+<link href="/css/prettify.css" type="text/css" rel="stylesheet" />
+<script type="text/javascript" src="/javascripts/prettify.js"></script>
+
+</head>
+<body onload="prettyPrint()">
+<div id="page">
+
+<div id="sidebar">
+<a href="/" class="homelink">Dancer Advent Calendar</a><br />
+
+<p>
+The PerlDancer Advent Calendar is a community-driven project that aims 
+to showcase the Dancer Perl web framework.
+</p>
+
+<p>
+Each day of December until Christmas, one article about Dancer. Stay tuned for new moves!
+</p>
+
+<ul id="sidebar-items">
+<li>
+    <h3>About Dancer</h3>
+    <ul class="links">
+        <li><a href="http://www.perldancer.org/">Dancer homepage</a></li>
+        <li><a href="http://twitter.com/PerlDancer">Official Twitter</a></li>
+        <li><a href="http://github.com/PerlDancer/Dancer">Dancer on GitHub</a></li>
+        <li><a href="http://github.com/PerlDancer/Dancer2">Dancer 2 on GitHub</a></li>
+        <li><a class="feed" href="/feed/2010">RSS</a></li>
+    </ul>
+</li>
+</ul>
+</div>
+
+
+<div id="content">
+<div class="pod-document"><h1><a name="how_to_write_a_plugin"></a>How to write a plugin</h1>
+
+<p>Dancer is a <a href="http://en.wikipedia.org/wiki/Domain-specific_language">DSL</a> for
+writing web applications. It's focused on providing the obvious which makes the
+feature set limited on purpose.</p>
+<p>For advanced or particular needs, Dancer's DSL can be extended by plugins.</p>
+<p>This article will explain the basics and concepts of Dancer plugins
+and will guide you through the writing of your first plugin:
+<code>Dancer::Plugin::MobileDevice</code>.</p>
+<h2><a name="the_basics"></a>The Basics</h2>
+
+<p>Before starting to write our own plugin, let's explain what a plugin can do
+and how.</p>
+<p>A plugin is a package that declares (with the <code>register</code> keyword) a set of
+<i>keywords</i> that are bound to <i>code refs</i>. When a plugin has performed all of
+its declarations, it registers itself in Dancer's core with the
+<code>register_plugin</code> keyword.</p>
+<p>Once a Dancer application imports a plugin, all of the keywords declared by the
+plugin are visible in the application's namespace, just as if they were part of
+Dancer's core DSL.</p>
+<p>A plugin can also do everything a regular Dancer application can do, like
+declaring a <code>before</code> filter, declaring a couple of route handlers or even
+running some Perl code at its import time.</p>
+<h2><a name="the_concept_of_a_mobile_plugin"></a>The concept of a "mobile" plugin</h2>
+
+<p>Now that we know what a Dancer plugin is, and how it works, we have to
+find something to do. I recently had the idea to implement a plugin which
+would provide the developer with a facility to detect if the user agent
+is a mobile device or not.</p>
+<p>When thinking of that idea, I realized it would be a perfect subject for
+an article, because the plugin itself will not be complicated while using an
+interesting subset of the possibilities.</p>
+<p>The idea is to provide the following features:</p>
+<ul>
+<li><a name="item_dynamic_layout"></a><b>dynamic layout</b>
+<p>We want to serve light HTML content when accessed by a mobile
+device, so we'll basically set a specific layout whenever a mobile
+client requests a page. That way, we can forget about the layout and
+focus on our route handlers, and the plugin will handle that for us.</p>
+</li>
+<li><a name="item_boolean_accessor__code_is_mobile_device__code_"></a><b>boolean accessor <code>is_mobile_device</code></b>
+<p>Basically, the plugin should provide an accessor for letting the
+developer know if the current user agent is a mobile device or not.</p>
+</li>
+<li><a name="item_default_token_in_templates"></a><b>default token in templates</b>
+<p>We want all of our template calls to be able to know about
+<code>is_mobile_device</code>, so we want to make it a default token.</p>
+</li>
+</ul>
+<p>OK, I think this feature-set sounds like a good start for
+<code>Dancer::Plugin::MobileDevice</code>, let's start writing it!</p>
+<h2><a name="writing_the_plugin"></a>Writing the plugin</h2>
+
+<p>Let's start with an empty plugin skeleton:</p>
+<pre class="prettyprint">package Dancer::Plugin::MobileDevice;
+use Dancer ':syntax';
+use Dancer::Plugin;
+
+register_plugin;</pre>
+
+<p>That's it, we have an empty plugin. It does nothing yet, except
+registering itself to Dancer's core.</p>
+<p>We can now add a <i>keyword</i> which will be exported to our caller's
+namespace (basically, the user's application that <code>use</code>s our plugin).</p>
+<h3><a name="adding_a_keyword___code_is_mobile_device__code_"></a>Adding a keyword: <code>is_mobile_device</code></h3>
+
+<p>We want to provide a helper that returns a boolean value telling if
+the requesting user agent is a mobile device or not, we'll do that by
+exporting a new keyword to Dancer's DSL.</p>
+<p>This keyword is basically a subroutine bound to a name (<a href="https://metacpan.org/module/Dancer::Plugin">Dancer::Plugin</a> takes
+care of the exporting magic for us, we only have to declare new
+keywords with <code>register</code> and register the plugin itself when done with
+<code>register_plugin</code>).</p>
+<p>The subroutine bound to our <code>is_mobile_device</code> keyword should do one simple
+thing: test the user agent string of the incoming request against a
+pattern of known mobile devices. This is as easy as the following:</p>
+<pre class="prettyprint">register 'is_mobile_device' =&gt; sub {
+    return request-&gt;user_agent =~
+        /(iPhone|Android|BlackBerry|Mobile|Palm)/;
+};</pre>
+
+<p>That's it. The <code>request</code> keyword is Dancer-native and returns a
+<a href="https://metacpan.org/module/Dancer::Request">Dancer::Request</a> object representing the current incoming request.
+It provides among other goodies an accessor to the user agent string
+(<code>user_agent</code>) and we test it with a regular expression with well-known
+mobile device strings.</p>
+<p>Whenever it's called from a route handler (or a filter), it returns
+true or false depending on the match.</p>
+<h3><a name="dynamic_layout"></a>Dynamic layout</h3>
+
+<p>We now want to change the layout whenever a request is served for a
+mobile device. This can easily be done with a before filter:</p>
+<pre class="prettyprint">before sub {
+    var orig_layout =&gt; setting('layout');
+
+    if ( is_mobile_device() ) {
+        setting layout =&gt; 'mobile';
+    }
+};</pre>
+
+<p>A <code>before</code> filter is executed whenever a request is served, <b>before</b>
+the route handler. This filter takes care of changing the <code>layout</code>
+setting whenever the <code>is_mobile_device</code> is true.</p>
+<p>We don't want the layout setting to remain that way afterwards, we
+want to restore that setting to its original value after the request
+is processed. That's why we save it first with the <code>var</code> keyword.</p>
+<p>Then, with an after filter, will reset it to its original value:</p>
+<pre class="prettyprint">after sub {
+    setting layout =&gt; vars-&gt;{orig_layout};
+};</pre>
+
+<p>That way, if a non-mobile client comes just after a mobile one, the
+layout will be back to its original value.</p>
+<h3><a name="default_token"></a>Default token</h3>
+
+<p>Finally, we want our templates to be able to render specific content
+for mobile devices, so we want to provide all our templates with a
+<code>is_mobile_device</code> token, whose value will be obviously given by the
+helper previously defined.</p>
+<p>This is easy to do, we just have to write a <code>before_template</code> filter,
+which will alter the default tokens hash table that is given to any
+<code>template</code> call.</p>
+<pre class="prettyprint">before_template sub {
+    my $tokens = shift;
+    $tokens-&gt;{'is_mobile_device'} = is_mobile_device();
+};</pre>
+
+<p>That's it, we can now do this kind of conditions in our views:</p>
+<pre class="prettyprint">&lt;% IF is_mobile_device %&gt;
+    some content for mobile devices
+&lt;% END %&gt;</pre>
+
+<h2><a name="conclusion"></a>Conclusion</h2>
+
+<p>Well, here we are. We now have a Dancer plugin that does what we
+wanted, writing a mobile-aware Dancer app will now be much easier.</p>
+<p>As you can imagine, I've written <a href="https://metacpan.org/module/Dancer::Plugin::MobileDevice">Dancer::Plugin::MobileDevice</a> and
+uploaded it to CPAN, so if you want to study it a bit more, feel free
+to grab the tarball. You can also check out the source code from
+<a href="https://github.com/sukria/Dancer-Plugin-MobileDevice">GitHub</a>.</p>
+<p>Furthermore, if you want to see this plugin in action, just use your smartphone
+to access the advent calendar. Indeed, our advent calendar is powered by
+<a href="http://perldancer.org">Dancer</a> and uses <code>Dancer::Plugin::MobileDevice</code> to
+change the layout dynamically, just as explained in this article.</p>
+<h2><a name="author"></a>Author</h2>
+
+<p>This article has been written by Alexis Sukrieh for the PerlDancer Advent
+Calendar 2010.</p>
+<h2><a name="copyright"></a>Copyright</h2>
+
+<p>Copyright (C) 2010 by Alexis Sukrieh <code>&lt;sukria@sukria.net&gt;</code></p>
+</div>
+
+ <div id="disqus_thread"></div>
+    <script type="text/javascript">
+        /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+        var disqus_shortname = 'danceradvent'; // required: replace example with your forum shortname
+
+        /* * * DON'T EDIT BELOW THIS LINE * * */
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+
+
+
+</div>
+
+
+
+<div id="footer">
+Powered by the  
+<a href="http://perldancer.org/" title="Perl Dancer - Perl web framework">
+Dancer Perl web framework</a>
+</div>
+</div>
+
+
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-25174467-2']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+</body>
+</html>

@@ -1,0 +1,237 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+<title> Why routes - route-based programming introduction | PerlDancer Advent Calendar</title>
+<link rel="stylesheet" href="/css/style.css" />
+<link rel="alternate" type="application/rss+xml" title="All Articles " href="/feed/2010" /> 
+
+
+<!-- Grab Google CDN's jQuery. fall back to local if necessary -->
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js" type="text/javascript"></script>
+<script type="text/javascript">/* <![CDATA[ */
+    !window.jQuery && document.write('<script src="/javascripts/jquery.js"><\/script>')
+/* ]]> */</script>
+
+<!-- Prettyfy -->
+<link href="/css/prettify.css" type="text/css" rel="stylesheet" />
+<script type="text/javascript" src="/javascripts/prettify.js"></script>
+
+</head>
+<body onload="prettyPrint()">
+<div id="page">
+
+<div id="sidebar">
+<a href="/" class="homelink">Dancer Advent Calendar</a><br />
+
+<p>
+The PerlDancer Advent Calendar is a community-driven project that aims 
+to showcase the Dancer Perl web framework.
+</p>
+
+<p>
+Each day of December until Christmas, one article about Dancer. Stay tuned for new moves!
+</p>
+
+<ul id="sidebar-items">
+<li>
+    <h3>About Dancer</h3>
+    <ul class="links">
+        <li><a href="http://www.perldancer.org/">Dancer homepage</a></li>
+        <li><a href="http://twitter.com/PerlDancer">Official Twitter</a></li>
+        <li><a href="http://github.com/PerlDancer/Dancer">Dancer on GitHub</a></li>
+        <li><a href="http://github.com/PerlDancer/Dancer2">Dancer 2 on GitHub</a></li>
+        <li><a class="feed" href="/feed/2010">RSS</a></li>
+    </ul>
+</li>
+</ul>
+</div>
+
+
+<div id="content">
+<div class="pod-document"><h1><a name="why_routes___route_based_programming_introduction"></a>Why routes - route-based programming introduction</h1>
+
+<p>In this article, we'll try to explain the basic premise behind Dancer, to make
+it easier for you to get started. That premise being
+<i>route-based web programming</i>.</p>
+<h2><a name="common_web_programming_models"></a>Common web programming models</h2>
+
+<h3><a name="cgi"></a>CGI</h3>
+
+<p>CGI (Common Gateway Interface) is arguably the most common web programming
+model. Not because it's particularly good, but because it's the simplest to
+write (something which is no longer true, thanks to Dancer, as we'll see later
+on) and the easier to configure on a web server.</p>
+<p>Mainly CGI web programming entails the web server running a script, providing
+everything possible (such as request parameters) in the environment variable
+(<code>%ENV</code>) and taking the standard output (<i>STDOUT</i>) and returning that to the
+browser, except the first chunk which is used for internal browser usage (such
+as declaring content type, setting cookies, noting redirects and so forth).</p>
+<p>Every time a browser makes a request, the server runs the CGI script and gets
+the information back to the browser. This is clearly very wasteful in resources.</p>
+<p>This can give programmers a lot of hassle. For example, you need to purify your
+environment variables, you need to print the content type (if you only provide
+one chunk of content without the internal browser chunk), the web server will
+crash your request and send the browser a 500 (Internal Server Error).</p>
+<p>You have to understand what a user wanted by checking the parameters. Even if
+use the great <a href="https://metacpan.org/module/CGI">CGI</a> module, you still need to write the entire logic behind
+what should happen and when.</p>
+<p>For example, to print the main page, you may write code such as this:</p>
+<pre class="prettyprint">use strict;
+use warnings;
+use CGI;
+
+my $cgi = CGI-&gt;new;
+if ( my $page = $cgi-&gt;param('page') ) {
+    if ( $page eq 'main' ) {
+        print $cgi-&gt;header( charset =&gt; 'UTF-8' );
+        # get main page and print it
+    }
+}</pre>
+
+<p>That's a lot of boilerplate, and we haven't really gone into parameters which
+define how the page will be displayed, templating boilerplate and pretty links.</p>
+<h3><a name="mvc"></a>MVC</h3>
+
+<p>MVC (Model, View, Controller) was a major breakthrough that allowed us to write
+our code more efficiently with reusable components and logical separation.</p>
+<p>An MVC framework allows you to separate your application to a <i>Model</i> which
+handles your database connections - ORM-laden, usually, a <i>View</i> which handles
+your output (usually through templates) with their configuration and preferences
+and finally a <i>Controller</i> which contains your application logic.</p>
+<p>This allows you to write scalable, clean, understandable, reusable code.</p>
+<h2><a name="namespace_matching"></a>Namespace matching</h2>
+
+<p>MVC relies on something we refer to as <i>namespace matching</i>, which means that
+in order to dispatch a request to the correct code piece, the MVC framework will
+have a (usually predetermined) destination according to your application's
+namespace.</p>
+<p>In <a href="https://metacpan.org/module/Catalyst">Catalyst</a>, for example, a request to <code>http://myapp/view/articles/30</code> will
+be dispatched using the namespace <i>MyAppName::View</i> (as long as our app is
+under a <i>MyApp</i> namespace) to the file <i>View.pm</i>, to the function <i>articles</i>
+and will send <i>30</i> to as a first parameter to the function.</p>
+<p>This easy logic allows Catalyst (and MVC frameworks) to be very accurate, but
+also more rigid. Catalyst itself has many ways of making it much more flexible.</p>
+<h2><a name="routes"></a>Routes</h2>
+
+<p>Routes was an idea introduced by Ruby's <b>Sinatra</b> framework (which we often
+credit) and takes a much cleaner and clearer approach to cut down on the
+added hierarchy complexity that MVC can add.</p>
+<p>Routes are basically paths the user takes which are attached to code that will
+be triggered when a user reaches the specific route.</p>
+<h3><a name="basic_dispatching"></a>Basic dispatching</h3>
+
+<p>Imagine a user making a GET request to <i>/</i>. The following route will catch it
+and execute the attached subroutine:</p>
+<pre class="prettyprint">get '/' =&gt; sub { 'yay' };</pre>
+
+<p>In <a href="https://metacpan.org/module/Dancer">Dancer</a>, every return value is actually the content the user will get - and
+don't worry, you don't have to specify what the content type is, although you
+can.</p>
+<p>Usually you will render a template, and you can do that just as easy:</p>
+<pre class="prettyprint">get '/' =&gt; sub { template 'index' };</pre>
+
+<p>You'll notice that routes are very succinct and easy to read.</p>
+<h3><a name="parameters"></a>Parameters</h3>
+
+<p>The code that routes run do not get any parameters and instead rely on framework
+keywords to get the information needed.  For example, to get the name of a user
+in a form that was <i>POST</i>ed to a route:</p>
+<pre class="prettyprint">post '/login' =&gt; sub {
+    return "Hello, ", params-&gt;{'name'};
+};</pre>
+
+<p>Routes are also able to specify variables in a given route, to allow for more
+dynamic routes. Here is an article view route:</p>
+<pre class="prettyprint">get '/view/article/:id' =&gt; sub {
+    template 'article' =&gt; {
+        entry = get_article( params-&gt;{'id'} ),
+    };
+};</pre>
+
+<p><a href="https://metacpan.org/module/Dancer">Dancer</a> does not carry an ORM or DB bindings with it because it aspires to be
+as lightweight as possible, but there are plugins which allow you to hook up to
+schemas straight from your app. Check out <a href="https://metacpan.org/module/Dancer::Plugin::Database">Dancer::Plugin::Database</a> and
+<a href="https://metacpan.org/module/Dancer::Plugin::DBIC">Dancer::Plugin::DBIC</a> for more on that.</p>
+<h3><a name="regular_expressions"></a>Regular expressions</h3>
+
+<p>Routes have much more to offer but in case you're not fully happy with the
+default spec for routes, you can specify your own route in any way, shape or
+form you find comfortable using regexes:</p>
+<pre class="prettyprint">get qr{ / view / articles / (\d+)(\.\d+)? }x =&gt; sub {
+    # the matches can then be fetched using splat()
+    my @matches = splat;
+};</pre>
+
+<p><i>(splat is a keyword that originated in Sinatra, blame them for the name :)</i></p>
+<h3><a name="more"></a>More</h3>
+
+<p>Routes actually have another thing or two up their sleeve (such as being able
+to skip routes or filter routes by hostname or user agent strings), but you can
+read all about it on <a href="https://metacpan.org/module/Dancer">Dancer</a> and <a href="https://metacpan.org/module/Dancer::Introduction">Dancer::Introduction</a>.</p>
+<h2><a name="summary"></a>Summary</h2>
+
+<p>What we've gone over in this article is the difference between CGI programming,
+MVC programming and route-based programming (which was introduced by the micro
+web frameworks).</p>
+<p>You may ask, however, what should you choose for your project? Which is the
+best?</p>
+<p>It's all a matter of choice and you first know that every project may be
+different than the next. You might want to use Dancer for one project but prefer
+to use Catalyst for another (and hopefully never use pure CGI for anything), and
+that's perfectly fine, because that's what we do too. :)</p>
+<p>The major benefit of route-based web programming is that it's much lighter,
+requires no specific directory hierarchy or a strong separation of model and
+view (since in Dancer you can configure both in the main config file in
+two-three lines). It's easier and faster to get it up and running, that's for
+sure. It's also here to stay.</p>
+<h2><a name="author"></a>Author</h2>
+
+<p>Sawyer X</p>
+</div>
+
+ <div id="disqus_thread"></div>
+    <script type="text/javascript">
+        /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+        var disqus_shortname = 'danceradvent'; // required: replace example with your forum shortname
+
+        /* * * DON'T EDIT BELOW THIS LINE * * */
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+
+
+
+</div>
+
+
+
+<div id="footer">
+Powered by the  
+<a href="http://perldancer.org/" title="Perl Dancer - Perl web framework">
+Dancer Perl web framework</a>
+</div>
+</div>
+
+
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-25174467-2']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+</body>
+</html>

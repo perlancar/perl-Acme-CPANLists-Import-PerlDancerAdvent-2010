@@ -1,0 +1,277 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+<title> Dancer 1.2 - a micro web framework milestone | PerlDancer Advent Calendar</title>
+<link rel="stylesheet" href="/css/style.css" />
+<link rel="alternate" type="application/rss+xml" title="All Articles " href="/feed/2010" /> 
+
+
+<!-- Grab Google CDN's jQuery. fall back to local if necessary -->
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js" type="text/javascript"></script>
+<script type="text/javascript">/* <![CDATA[ */
+    !window.jQuery && document.write('<script src="/javascripts/jquery.js"><\/script>')
+/* ]]> */</script>
+
+<!-- Prettyfy -->
+<link href="/css/prettify.css" type="text/css" rel="stylesheet" />
+<script type="text/javascript" src="/javascripts/prettify.js"></script>
+
+</head>
+<body onload="prettyPrint()">
+<div id="page">
+
+<div id="sidebar">
+<a href="/" class="homelink">Dancer Advent Calendar</a><br />
+
+<p>
+The PerlDancer Advent Calendar is a community-driven project that aims 
+to showcase the Dancer Perl web framework.
+</p>
+
+<p>
+Each day of December until Christmas, one article about Dancer. Stay tuned for new moves!
+</p>
+
+<ul id="sidebar-items">
+<li>
+    <h3>About Dancer</h3>
+    <ul class="links">
+        <li><a href="http://www.perldancer.org/">Dancer homepage</a></li>
+        <li><a href="http://twitter.com/PerlDancer">Official Twitter</a></li>
+        <li><a href="http://github.com/PerlDancer/Dancer">Dancer on GitHub</a></li>
+        <li><a href="http://github.com/PerlDancer/Dancer2">Dancer 2 on GitHub</a></li>
+        <li><a class="feed" href="/feed/2010">RSS</a></li>
+    </ul>
+</li>
+</ul>
+</div>
+
+
+<div id="content">
+<div class="pod-document"><h1><a name="dancer_1_2___a_micro_web_framework_milestone"></a>Dancer 1.2 - a micro web framework milestone</h1>
+
+<h2><a name="dancer"></a>Dancer?</h2>
+
+<p><a href="https://metacpan.org/module/Dancer">Dancer</a> is a micro web framework that allows you to get a website up and
+running within a minute, if not sooner. It abstracts away a lot of nastiness
+that exists in web programming and lets you focus just on the important
+details, without compromising on control and strength.</p>
+<p>The inspiration for Dancer is the Ruby micro web framework <b>Sinatra</b>, which we
+started to port and since then started diverging from Sinatra to our own path.</p>
+<p>It supports <a href="https://metacpan.org/module/Plack">Plack</a>/<a href="https://metacpan.org/module/PSGI">PSGI</a> so you can enjoy the new modern Perl world, but it
+also supports an internal web server to allow you to rapidly develop your web
+application without setting up a web server.</p>
+<p>The following synopsis shows just how strong and yet simple Dancer really is:</p>
+<pre class="prettyprint">get '/view/user/:id' =&gt; sub {
+    my $id      = params-&gt;{'id'};
+    my $details = database-&gt;selectrow_hashref(
+        'select * from users where id=?', undef, params-&gt;{id}
+    );
+    template user =&gt; { user =&gt; $details };
+};</pre>
+
+<p>This shows off an HTTP <b>GET</b> request route with a variable in it which is
+attached to an anonymous subroutine which gets the ID, performs a simple
+database query (using <a href="https://metacpan.org/module/Dancer::Plugin::Database">Dancer::Plugin::Database</a>) and passes the data to a
+template to render the resulting page.</p>
+<p>It really is that simple!</p>
+<p>If you like this, you should check out the Dancer website and documentation for
+more information on what Dancer can do to ease your web programming pain and
+leaving you with the fun, interesting parts.</p>
+<h2><a name="dancer_1_2_is_finally_out"></a>Dancer 1.2 is finally out</h2>
+
+<p>We've been speaking our heads off on the <b>1.2</b> release of Dancer for a while
+now. Why are we so excited, you ask? Well, for a few reasons!</p>
+<h3><a name="the_community_blossomed"></a>The community blossomed</h3>
+
+<p>The Dancer community has grown with time and provided a nice warm place for
+people to raise questions, ideas and create things together. Version 1.2
+presents a culmination of the communal work of a very large number of people,
+all from the community, in a wide variety of areas from documentation, bug
+tracing, bug fixes, features and even design.</p>
+<p>Therefore this release is dedicated to the Dancer community itself!</p>
+<h3><a name="utf_8_ftw_"></a>UTF-8 FTW!</h3>
+
+<p>One of the issues the community stressed is having Unicode support, and we've
+decided it was about time to implement it fully.</p>
+<p>Unicode support isn't as trivial as it sounds, though. You have to support it in
+the core of the framework for parameter and environment parsing, in the
+different template engines (and Dancer has quite a few) and all around.</p>
+<p>So now we have that! It's also on by default for you!</p>
+<h3><a name="use_the_docs__luke_"></a>Use the docs, Luke!</h3>
+
+<p>If you like reading documentation (and who doesn't, really?), we made a lot of
+improvements to the docs. We've added a lot and changed quite a bit to make it
+clearer.</p>
+<p>While it still isn't perfect, it's a great place to start and you'll be able to
+understand more and more core layers of Dancer, and it will even give you a
+heads up if you feel like playing with the core, adding a feature, fixing a bug
+or simply better understand how Dancer works.</p>
+<p>All Dancer's features and keywords are documented; we also have a tutorial, a
+cookbook for those who prefer to see short examples of how to achieve common
+tasks, and full in-depth examples too.</p>
+<h3><a name="stable_solid_foundations"></a>Stable solid foundations</h3>
+
+<p>Users should always be able to trust Dancer to be stable. We've put countless
+hours into fixing bugs and improving the quality to ensure that now, more than
+ever, Dancer is a solid foundation you can depend upon.</p>
+<p>While some of this work went into code, a major part went as well to
+documenting the code and writing plenty of tests to have a very high code
+coverage.</p>
+<p>Some of the work also included our internal policies, such as the deprecation
+policy. When Dancer 1.2 finds you're doing something deprecated, it will not
+break, but instead inform you of it (via warning) so you will be able to fix it
+at your leisure. The entire 1.2xxx release series promises not to break your
+app, unless it is a critical fix (such as a security concern - which is
+business-critical). You are assured stability in upgrading to any 1.2xxx
+release.</p>
+<h3><a name="deployability"></a>Deployability</h3>
+
+<p>Yes, <i>deployability</i> is indeed a word (we checked) and it is something that all
+web applications dread. Since Dancer itself supports PSGI/Plack, deploying your
+Dancer applications is easy and flexible.</p>
+<p>However, the point that people find tricky is <b>how</b>. How do I configure my
+Apache for Dancer? What if it's Lighttpd, or Nginx? What about.. what about...?</p>
+<p>Therefore, we put effort in preparing <a href="https://metacpan.org/module/Dancer::Deployment">Dancer::Deployment</a> which provides
+instructions on how to configure web servers for your Dancer application.</p>
+<p>We've also put more work for the CGI and FCGI runner files and they should prove
+to be more correct and aid you better in deploying your app.</p>
+<h3><a name="oh__the_pretty_pretty_colors"></a>Oh, the pretty pretty colors</h3>
+
+<p>Dancer comes with a scaffolding script that gives you a nice layout to play with
+when you just start programming. We've decided to give it a whirl as well and
+improved it quite a bit.</p>
+<p>Your new scaffolded app should be prettier and more impressive, without making
+any effort. It even uses the jQuery JavaScript library! OMG jQuery!</p>
+<h2><a name="what_s_in_the_future_for_dancer"></a>What's in the future for Dancer</h2>
+
+<p>While we hope you enjoy version 1.2, we're not about to rest on our laurels.
+We're still working on improving the core, the documentation, the code testing
+coverage, provide new features, expand and flex other features and provide a
+stable set of community plugins to remove more and more clutter from your work.</p>
+<h2><a name="advent_calendar_you_too_really"></a>Advent calendar? You too? Really?</h2>
+
+<p>The advent calendar is our way of showcasing Dancer's ability by showing you how
+to write Dancer applications, plugins and engines. You'll learn how to deploy
+your applications on various backends and understand the beauty of simplicity
+that Dancer offers using its clean
+<a href="http://en.wikipedia.org/wiki/Domain-specific_language">DSL</a> and route-based
+structure.</p>
+<p>Stay tuned for more awesomeness!</p>
+<h2><a name="credits"></a>Credits</h2>
+
+<p>Credit goes to the entire Dancer community for our 1.2 release and the advent
+calendar. Dancer would definitely not be where it's at right now without the love
+and care the community has given it.</p>
+<p>A great thanks goes (and not limited) to the following people (in alphabetical
+order):</p>
+<ul>
+<li><a name="item_Adam_J__Foxson"></a><b>Adam J. Foxson</b>
+</li>
+<li><a name="item_Al_Newkirk"></a><b>Al Newkirk</b>
+</li>
+<li><a name="item_Alexis_Sukrieh"></a><b>Alexis Sukrieh</b>
+</li>
+<li><a name="item_Anton_Ukolov"></a><b>Anton Ukolov</b>
+</li>
+<li><a name="item_Boris_Shomodjvarac"></a><b>Boris Shomodjvarac</b>
+</li>
+<li><a name="item_crujones"></a><b>crujones</b>
+</li>
+<li><a name="item_Damien_Krotkine"></a><b>Damien Krotkine</b>
+</li>
+<li><a name="item_Danijel_Tasov"></a><b>Danijel Tasov</b>
+</li>
+<li><a name="item_Dave_Doyle"></a><b>Dave Doyle</b>
+</li>
+<li><a name="item_David_Precious"></a><b>David Precious</b>
+</li>
+<li><a name="item_Franck_Cuny"></a><b>Franck Cuny</b>
+</li>
+<li><a name="item_Gabor_Szabo"></a><b>Gabor Szabo</b>
+</li>
+<li><a name="item_Igor_Bujna"></a><b>Igor Bujna</b>
+</li>
+<li><a name="item_Ivan"></a><b>Ivan</b>
+</li>
+<li><a name="item_Mark_Allen"></a><b>Mark Allen</b>
+</li>
+<li><a name="item_Maurice"></a><b>Maurice</b>
+</li>
+<li><a name="item_Mike_Schroeder"></a><b>Mike Schroeder</b>
+</li>
+<li><a name="item_Naveed_Massjouni"></a><b>Naveed Massjouni</b>
+</li>
+<li><a name="item_Naveen_Manivannan"></a><b>Naveen Manivannan</b>
+</li>
+<li><a name="item_Nick_Langridge"></a><b>Nick Langridge</b>
+</li>
+<li><a name="item_Philippe_Bruhat"></a><b>Philippe Bruhat</b>
+</li>
+<li><a name="item_Puneet_Kishor"></a><b>Puneet Kishor</b>
+</li>
+<li><a name="item_Rafa&#x142;_Pocztarski"></a><b>Rafa&#x142; Pocztarski</b>
+</li>
+<li><a name="item_Roman_Galeev"></a><b>Roman Galeev</b>
+</li>
+<li><a name="item_Sawyer_X"></a><b>Sawyer X</b>
+</li>
+<li><a name="item_Sebastian_de_Castelberg"></a><b>Sebastian de Castelberg</b>
+</li>
+<li><a name="item_snearch"></a><b>snearch</b>
+</li>
+<li><a name="item_Stefan_Oberwahrenbrock"></a><b>Stefan Oberwahrenbrock</b>
+</li>
+<li><a name="item_Yanick_Champoux"></a><b>Yanick Champoux</b>
+</li>
+<li><a name="item_and_everyone_in_the_community_we_ve_missed_"></a><b>and everyone in the community we've missed.</b>
+</li>
+</ul>
+</div>
+
+ <div id="disqus_thread"></div>
+    <script type="text/javascript">
+        /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+        var disqus_shortname = 'danceradvent'; // required: replace example with your forum shortname
+
+        /* * * DON'T EDIT BELOW THIS LINE * * */
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+
+
+
+</div>
+
+
+
+<div id="footer">
+Powered by the  
+<a href="http://perldancer.org/" title="Perl Dancer - Perl web framework">
+Dancer Perl web framework</a>
+</div>
+</div>
+
+
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-25174467-2']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+</body>
+</html>

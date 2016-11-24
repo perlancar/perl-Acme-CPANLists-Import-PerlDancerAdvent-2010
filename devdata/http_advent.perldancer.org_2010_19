@@ -1,0 +1,268 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+<title> Writing a new Dancer serializer backend | PerlDancer Advent Calendar</title>
+<link rel="stylesheet" href="/css/style.css" />
+<link rel="alternate" type="application/rss+xml" title="All Articles " href="/feed/2010" /> 
+
+
+<!-- Grab Google CDN's jQuery. fall back to local if necessary -->
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js" type="text/javascript"></script>
+<script type="text/javascript">/* <![CDATA[ */
+    !window.jQuery && document.write('<script src="/javascripts/jquery.js"><\/script>')
+/* ]]> */</script>
+
+<!-- Prettyfy -->
+<link href="/css/prettify.css" type="text/css" rel="stylesheet" />
+<script type="text/javascript" src="/javascripts/prettify.js"></script>
+
+</head>
+<body onload="prettyPrint()">
+<div id="page">
+
+<div id="sidebar">
+<a href="/" class="homelink">Dancer Advent Calendar</a><br />
+
+<p>
+The PerlDancer Advent Calendar is a community-driven project that aims 
+to showcase the Dancer Perl web framework.
+</p>
+
+<p>
+Each day of December until Christmas, one article about Dancer. Stay tuned for new moves!
+</p>
+
+<ul id="sidebar-items">
+<li>
+    <h3>About Dancer</h3>
+    <ul class="links">
+        <li><a href="http://www.perldancer.org/">Dancer homepage</a></li>
+        <li><a href="http://twitter.com/PerlDancer">Official Twitter</a></li>
+        <li><a href="http://github.com/PerlDancer/Dancer">Dancer on GitHub</a></li>
+        <li><a href="http://github.com/PerlDancer/Dancer2">Dancer 2 on GitHub</a></li>
+        <li><a class="feed" href="/feed/2010">RSS</a></li>
+    </ul>
+</li>
+</ul>
+</div>
+
+
+<div id="content">
+<div class="pod-document"><h1><a name="writing_a_new_dancer_serializer_backend"></a>Writing a new Dancer serializer backend</h1>
+
+<p>Writing serializers in <a href="https://metacpan.org/module/Dancer">Dancer</a> is so easy you can read this standing on your
+head!</p>
+<p>In this entry we'll be writing a new serializer for Dancer and upload it to
+CPAN! Feel free to add your own once you finish reading this. :)</p>
+<h2><a name="how_do_serializers_work"></a>How do serializers work?</h2>
+
+<p>Serializers basically do two things:</p>
+<ul>
+<li><a name="item_Serialize_a_data_structure"></a><b>Serialize a data structure</b>
+<p>Take a data structure as a parameter and return serialized data.</p>
+</li>
+<li><a name="item_Deserialize_serialized_data"></a><b>Deserialize serialized data</b>
+<p>Take serialized data as a parameter and return structured data.</p>
+</li>
+</ul>
+<h2><a name="deciding_on_the_serialization_format"></a>Deciding on the serialization format</h2>
+
+<p>Serializes are so easy to write, Dancer already includes a few, such as:</p>
+<ul>
+<li><a name="item_JSON"></a><b>JSON</b>
+<p>Using <a href="https://metacpan.org/module/JSON">JSON</a>.</p>
+</li>
+<li><a name="item_XML"></a><b>XML</b>
+<p>Using <a href="https://metacpan.org/module/XML::Simple">XML::Simple</a>.</p>
+</li>
+<li><a name="item_YAML"></a><b>YAML</b>
+<p>Using <a href="https://metacpan.org/module/YAML">YAML</a>.</p>
+</li>
+<li><a name="item_Dumper"></a><b>Dumper</b>
+<p>Using <a href="https://metacpan.org/module/Data::Dumper">Data::Dumper</a>.</p>
+</li>
+<li><a name="item_Mutable"></a><b>Mutable</b>
+<p>A self-adjusting serializer that uses the <i>content type</i> and <i>accept</i> headers.</p>
+</li>
+</ul>
+<p>Since these are already taken (unless you want to change one implementation with
+another, such as <a href="https://metacpan.org/module/YAML">YAML</a> for <a href="https://metacpan.org/module/YAML::Tiny">YAML::Tiny</a>), there's not much point to write
+them again.</p>
+<p>And since the recommended serialization formats are already mentioned above,
+it's a good reason to look into more nether regions, such as... UU encoding!</p>
+<p>Of course, UU encoding isn't a format in its own, just an encoding so it isn't
+recursive and we need to encode an entire structure recursively. We'll cheat
+around it but using <a href="https://metacpan.org/module/Storable">Storable</a>'s <code>nfreeze</code> and then encoding it.</p>
+<p><i>(credit goes out to <a href="https://metacpan.org/module/Apache::Session">Apache::Session</a> for the idea)</i></p>
+<h2><a name="module_skeleton"></a>Module skeleton</h2>
+
+<p>This should be the simplest skeleton, including just the required modules:</p>
+<pre class="prettyprint">package Dancer::Serializer::UUEncode;
+
+use strict;
+use warnings;
+
+use Carp;
+use Storable qw/ nfreeze thaw /;
+use base 'Dancer::Serializer::Abstract';
+
+# ...
+
+1;</pre>
+
+<p>First, notice that we're using <a href="https://metacpan.org/module/Dancer::Serializer::Abstract">Dancer::Serializer::Abstract</a> as a base, that's
+because we already implemented the Dancer integration logic under that base
+class. It promises us less work and more present and future portability. It also
+makes our module object oriented.</p>
+<h2><a name="methods"></a>Methods</h2>
+
+<p>There are a three subroutines we should implement.</p>
+<ul>
+<li><a name="item_serialize"></a><b>serialize</b>
+<p>The subroutine that does the serialization process itself.</p>
+<pre class="prettyprint">sub serialize {
+    my ( $self, $entity ) = @_;
+
+    return pack( 'u', nfreeze($entity) );
+}</pre>
+
+<p>Yes, that's it!</p>
+</li>
+<li><a name="item_deserialize"></a><b>deserialize</b>
+<p>The subroutine that does the deserialization process itself.</p>
+<pre class="prettyprint">sub deserialize {
+    my ( $self, $content ) = @_;
+    my $data = thaw( unpack( 'u', $content ) );
+
+    defined $data or croak "Couldn't thaw unpacked content '$content'";
+
+    return $data;
+}</pre>
+
+</li>
+<li><a name="item_content_type"></a><b>content_type</b>
+<p>This subroutine simply returns the content type of our serialization. This is
+good practice for web applications so we'll implement it. If we don't, it will
+default to <i>text/plain</i>, which is good too.</p>
+<pre class="prettyprint">sub content_type {'text/uuencode'}</pre>
+
+</li>
+</ul>
+<p>We pretty much finished the serializer.</p>
+<h2><a name="did_we_really_finish_it_so_quickly"></a>Did we really finish it so quickly?</h2>
+
+<p>Yes, we did!</p>
+<h2><a name="what_else_can_we_do"></a>What else can we do?</h2>
+
+<h3><a name="helpers"></a>helpers</h3>
+
+<p>You can add helpers that will make it easier to use the <code>serialize/deserialize</code>
+subroutines functionally outside of automatic serialization.</p>
+<pre class="prettyprint"># helpers
+sub from_uuencode {
+    my ($uuencode) = @_;
+    my $s = Dancer::Serializer::UUEncode-&gt;new;
+
+    return $s-&gt;deserializer($uuencode);
+}
+
+sub to_uuencode {
+    my ($data) = @_;
+    my $s = Dancer::Serializer::UUEncode-&gt;new;
+
+    return $s-&gt;serialize($data);
+}</pre>
+
+<h3><a name="initializer"></a>initializer</h3>
+
+<p>The <code>init</code> subroutine is run on initialize of our object, and helps you take
+care of initialize checks you might have.</p>
+<pre class="prettyprint">sub init {
+    # do some checks
+}</pre>
+
+<h3><a name="loader"></a>loader</h3>
+
+<p>The <code>loaded</code> subroutine is not run by <a href="https://metacpan.org/module/Dancer">Dancer</a> itself but it is common
+practice to separate your lazy module loading to this subroutine and then run it
+using the initializer.</p>
+<p>If we would want to lazy load Storable, we could use these subroutines as such:</p>
+<pre class="prettyprint">sub loaded {
+    require Storable;
+    Storable-&gt;import('nfreeze');
+}
+
+sub init {
+    my ($self) = @_;
+    $self-&gt;loaded;
+}</pre>
+
+<h2><a name="cpan__anyone"></a>CPAN, anyone?</h2>
+
+<p>While you've been reading this entry, I've taken the liberty to upload what we
+just wrote to CPAN and it should now be available as
+<a href="https://metacpan.org/module/Dancer::Serializer::UUEncode">Dancer::Serializer::UUEncode</a>. Nice, isn't it?</p>
+<p>Feel free to send me your names so I could add you to the CREDITS section in the
+POD! :)</p>
+<h2><a name="see_also"></a>See also</h2>
+
+<ul>
+<li><a name="item_The_previous_article_on__i_Dancer_Internals__i_"></a><b>The previous article on <i>Dancer Internals</i></b>
+</li>
+<li><a name="item_The_following_article_on__i_Writing_a_new_Dancer_logger_backend__i_"></a><b>The following article on <i>Writing a new Dancer logger backend</i></b>
+</li>
+<li><a name="item_The_article_after_that_on__i_Writing_a_new_Dancer_session_backend__i_"></a><b>The article after that on <i>Writing a new Dancer session backend</i></b>
+</li>
+</ul>
+<h2><a name="author"></a>Author</h2>
+
+<p>This article has been written by Sawyer X <code>&lt;xsawyerx@cpan.org&gt;</code> for the
+Perl Dancer Advent Calendar 2010.</p>
+</div>
+
+ <div id="disqus_thread"></div>
+    <script type="text/javascript">
+        /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+        var disqus_shortname = 'danceradvent'; // required: replace example with your forum shortname
+
+        /* * * DON'T EDIT BELOW THIS LINE * * */
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+
+
+
+</div>
+
+
+
+<div id="footer">
+Powered by the  
+<a href="http://perldancer.org/" title="Perl Dancer - Perl web framework">
+Dancer Perl web framework</a>
+</div>
+</div>
+
+
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-25174467-2']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+</body>
+</html>

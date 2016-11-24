@@ -1,0 +1,460 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+<title> Deploying Dancer in CGI and VPS Environments | PerlDancer Advent Calendar</title>
+<link rel="stylesheet" href="/css/style.css" />
+<link rel="alternate" type="application/rss+xml" title="All Articles " href="/feed/2010" /> 
+
+
+<!-- Grab Google CDN's jQuery. fall back to local if necessary -->
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js" type="text/javascript"></script>
+<script type="text/javascript">/* <![CDATA[ */
+    !window.jQuery && document.write('<script src="/javascripts/jquery.js"><\/script>')
+/* ]]> */</script>
+
+<!-- Prettyfy -->
+<link href="/css/prettify.css" type="text/css" rel="stylesheet" />
+<script type="text/javascript" src="/javascripts/prettify.js"></script>
+
+</head>
+<body onload="prettyPrint()">
+<div id="page">
+
+<div id="sidebar">
+<a href="/" class="homelink">Dancer Advent Calendar</a><br />
+
+<p>
+The PerlDancer Advent Calendar is a community-driven project that aims 
+to showcase the Dancer Perl web framework.
+</p>
+
+<p>
+Each day of December until Christmas, one article about Dancer. Stay tuned for new moves!
+</p>
+
+<ul id="sidebar-items">
+<li>
+    <h3>About Dancer</h3>
+    <ul class="links">
+        <li><a href="http://www.perldancer.org/">Dancer homepage</a></li>
+        <li><a href="http://twitter.com/PerlDancer">Official Twitter</a></li>
+        <li><a href="http://github.com/PerlDancer/Dancer">Dancer on GitHub</a></li>
+        <li><a href="http://github.com/PerlDancer/Dancer2">Dancer 2 on GitHub</a></li>
+        <li><a class="feed" href="/feed/2010">RSS</a></li>
+    </ul>
+</li>
+</ul>
+</div>
+
+
+<div id="content">
+<div class="pod-document"><h1><a name="deploying_dancer_in_cgi_and_vps_environments"></a>Deploying Dancer in CGI and VPS Environments</h1>
+
+<p>There are numerous ways to deploy <a href="https://metacpan.org/module/Dancer">Dancer</a> as mentioned in
+<a href="https://metacpan.org/module/Dancer::Deployment">Dancer::Deployment</a> and I would like to discuss two commonly used methods in
+production environments:</p>
+<ol>
+<li><a name="item_CGI___FastCGI"></a><b>CGI / FastCGI</b>
+</li>
+<li><a name="item_Reverse_Proxy"></a><b>Reverse Proxy</b>
+</li>
+</ol>
+<h1><a name="cgi"></a>CGI</h1>
+
+<p>A lot of shared hosting providers allow only CGI execution on Apache.
+One is also not allowed to edit <i>httpd.conf</i> or override certain values. With 
+this in mind, let's see how you could deploy on a shared hosting environment. 
+This method will vary based on your specific hosting environment but it
+has been tested successfully on
+<a href="https://metacpan.org/module/http:/www.nearlyfreespeech.net">NearlyFreeSpeech.Net</a>.</p>
+<h2><a name="requirements"></a>Requirements</h2>
+
+<p>The hosting company obviously has to install latest <a href="https://metacpan.org/module/Plack">Plack</a> and <a href="https://metacpan.org/module/Dancer">Dancer</a> along
+with all modules that you are using in your application. Most hosting providers
+will be able to install these for you upon request. However, you can also use
+<a href="https://metacpan.org/module/local::lib">local::lib</a> and build modules in your own directory yourself.</p>
+<p>You should request the following:</p>
+<ul>
+<li><a name="item__a_href__https___metacpan_org_module_Task__Plack__Task__Plack__a_"></a><b><a href="https://metacpan.org/module/Task::Plack">Task::Plack</a></b>
+</li>
+<li><a name="item__a_href__https___metacpan_org_module_Template__Template__a_"></a><b><a href="https://metacpan.org/module/Template">Template</a></b>
+</li>
+<li><a name="item__a_href__https___metacpan_org_module_Task__Dancer__Task__Dancer__a_"></a><b><a href="https://metacpan.org/module/Task::Dancer">Task::Dancer</a></b>
+</li>
+<li><a name="item____and_application_specific_modules"></a><b>...and application specific modules</b>
+</li>
+</ul>
+<p>You should also request updates to these and other modules regularly.</p>
+<ul>
+<li><a name="item_Note__1_"></a><b>Note #1:</b>
+<p><a href="https://metacpan.org/module/Plack::Runner">Plack::Runner</a> is what will actually be providing the CGI environment to
+Apache.</p>
+</li>
+<li><a name="item_Note__2_"></a><b>Note #2:</b>
+<p>If <a href="https://metacpan.org/module/Task::Dancer">Task::Dancer</a> fails for the hosting company, request individuals modules
+instead.</p>
+</li>
+</ul>
+<h2><a name="preparation"></a>Preparation</h2>
+
+<p>Locate the <i>dispatch.cgi</i> inside the 'public/' folder of your dancer
+application.  We are going to make a symbolic link to <i>dispatch.cgi</i>. Where you
+put that link is up to your personal preference, how you want the url to appear
+(sans mod_rewrite), and specifics relating to your hosting company. Let's 
+assume the root directory for your domain.</p>
+<p>From your domain root directory, type:
+<code>ln -s myapp/public/dispatch.cgi index.cgi</code></p>
+<h2><a name="apache"></a>Apache</h2>
+
+<p>At this point <a href="http://www.mydomain.com/">http://www.mydomain.com/</a> should render the '/' route if your
+hosting company set the Apache defaults for CGI properly.</p>
+<p>If that's the case then you're essentially done. Add your rewrite rules (if any)
+and then go grab a beer.</p>
+<p>If it didn't render properly then you have to create and edit the <i>.htaccess</i>
+inside the root directory or the Dancer application's root directory to allow
+for executing the scripts along with verifying any permissions.</p>
+<h3><a name="_htaccess"></a>.htaccess</h3>
+
+<p>First you need to set <i>index.cgi</i> as your directory index. You may also need to
+add handlers for cgi-scripts. This really depends on your hosting company though
+any redundant values would either be overridden or rejected silently by the
+server so don't worry.</p>
+<pre class="prettyprint">DirectoryIndex index.cgi
+AddHandler cgi-script .cgi .pl
+Options +ExecCGI -MultiViews +SymLinksIfOwnerMatch</pre>
+
+<h4><a name="rewrite_rules"></a>Rewrite Rules</h4>
+
+<p>If you decided to use your <i>index.cgi</i> file in your server root directory and
+DirectoryIndex is set then a rewrite rule is rarely necessary. Regardless here's
+a simple rewrite rule:</p>
+<pre class="prettyprint">RewriteEngine on
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^/index.cgi/(.*)  /$1 [L,R=301]</pre>
+
+<p>Read up on <a href="http://httpd.apache.org/docs/2.2/mod/mod_rewrite.html">mod_rewrite</a>.</p>
+<p>If you wish to do something fancy like <a href="http://myapp.mydomain.com">http://myapp.mydomain.com</a> then you
+would just need a DNS <b>CNAME</b> along with <b>mod_rewrite</b>.</p>
+<ul>
+<li><a name="item_Note__1"></a><b>Note #1</b>
+<p>It is highly recommended that you create a rewrite rules that tells Apache to
+serve static files directly.</p>
+</li>
+</ul>
+<h3><a name="common_problems"></a>Common Problems</h3>
+
+<p>If everything appears as it should, then you should be fine. If you're having
+issues with <b>file paths</b> check the following below. There are usually two or
+three reasons for this:</p>
+<ol>
+<li><a name="item_Permissions"></a><b>Permissions</b>
+<p>Does the <b>webserver user</b> have access to read, and possibly execute, the file?
+Your user account is rarely the web server user! You might have 'chgrp' the
+file or files to the webserver user!</p>
+</li>
+<li><a name="item__i_public___i_"></a><b><i>public/</i></b>
+<p>Is the file inside the application's <i>public/</i> folder? Check your config.yml
+paths carefully.</p>
+</li>
+<li><a name="item_Absolute_path"></a><b>Absolute path</b>
+<p>If you plan to use files outside of <i>public/</i> make sure the path is
+<b>system absolute</b>.</p>
+<ul>
+<li><a name="item_A_"></a><b>A.</b>
+<p>The environment that your application runs under and the one your account uses
+are usually different!</p>
+</li>
+<li><a name="item_B_"></a><b>B.</b>
+<p><i>/home/public/</i>, <i>/home/htdocs</i>, etc... are <b>NOT</b> absolute paths but set by
+user environments usually.</p>
+</li>
+</ul>
+</li>
+</ol>
+<p><b>*</b> A cheap/easy way to find out the absolute path is to write a simple
+'phpinfo.php' script:</p>
+<pre class="prettyprint"># in myphpinfo.php
+&lt;?php phpinfo(); ?&gt;</pre>
+
+<p>and search for the value of <i>_SERVER["SCRIPT_FILENAME"]</i> when you access it
+from the web. It should include references to the internal system paths.</p>
+<h2><a name="fastcgi"></a>FastCGI</h2>
+
+<p>For the few shared hosting companies that support FastCGI, just do the same
+thing as with CGI for <i>dispatch.fcgi</i> but in Apache's <i>.htaccess</i>:</p>
+<pre class="prettyprint">DirectoryIndex .fcgi
+AddHandler fastcgi-script .fcgi
+Options +ExecCGI -MultiViews +SymLinksIfOwnerMatch</pre>
+
+<p>Easy as that.</p>
+<h2><a name="caching"></a>Caching</h2>
+
+<p>On shared hosting, caching is done automatically. Caching yourself could
+actually decrease your site's performance! <b>Just don't worry about it.</b></p>
+<h1><a name="reverse_proxy"></a>Reverse Proxy</h1>
+
+<p><a href="http://en.wikipedia.org/wiki/Reverse_proxy">Reverse proxy</a> is a technique of
+proxying HTTP requests to a backend server or servers. The advantages include
+load balancing, greater performance, and easier administration. This method is
+preferred for a VPS, cloud and any set up where you have root access.</p>
+<h2><a name="frontend_server__nginx"></a>Frontend Server: Nginx</h2>
+
+<p><a href="https://metacpan.org/module/www.nginx.net">Nginx</a> is an high performance HTTP server. It is very fast at
+serving static files.</p>
+<p><i>(It is best if your Dancer application does not serve static files)</i></p>
+<p>Regardless of what frontend server you use, remember that it is best if your
+Dancer application will only be used to generate dynamic content or process
+tasks. Serving static files ties up resources and significantly decreases
+performance.</p>
+<p>Installing <b>Nginx</b> is beyond the scope of this document. Google it for your
+specific OS.</p>
+<p>On both CentOS and Debian, the files of interest should be under <i>/etc/nginx/</i>.
+The layout of the files will be different but for the most part there will be an
+<i>nginx.conf</i> along with a <i>site-available</i> folder.</p>
+<p>Depending on how you installed Nginx (repo/source/ect), your <i>nginx.conf</i>
+should contain only information relating to Nginx as a whole. You can, though
+not recommended, put everything into <i>nginx.conf</i>. It is recommended to include
+an <i>include</i> if not already present pointing to <i>sites-available</i> or custom
+folder:</p>
+<p>Example <i>/etc/nginx/nginx.conf</i>:</p>
+<pre class="prettyprint"># Create separate user just for webserver (if not automatically created)
+user www-data;
+
+# Set worker_processes to 1 (or # of cores) minimum and 2x-3x cores maximum.
+# Max Clients = worker_processes * (worker_connections/4)
+worker_processes  2;
+
+# Set affinity so that each core receives equal load/power or set to
+# specific cores (Optional)
+# Equally balanced on 2 / 4 cores respectively:
+worker_cpu_affinity 0101 1010;
+# worker_cpu_affinity 1000 0100 0010 0001;
+
+error_log  /var/log/nginx/main_error.log;
+pid        /var/run/nginx.pid;
+
+events {
+    # If you didn't read above note:
+    # max clients = worker_processes * (worker_connections/4)
+    # Set the maximum number of connections per worker.
+    # Twiddle these for max performance.
+    # Divided by 4 because browser requires 2 connections.
+    # Reverse proxy = another 2 connections per request.
+    # Thus 2 + 2 = 7 .. no 3 .. 9?
+    worker_connections  1024;
+
+    # There are 7 different polling methods Nginx can use.
+    # Here are the recommended for each OS though you should play around and
+    # see what works best for you.
+    # Linux (2.6+) / FreeBSD &amp; OS X / Solaris 10 respectively: 
+    use epoll;
+    # use kselect;
+    # use eventport;
+    # Note: You might have to recompile Nginx w/ specific options to access
+    # some of these.
+
+    # multi_accept on;
+}
+
+http {
+    # This mime.types thing may cause a lot of trouble if you're doing
+    # anything advance.
+    # 90% of the time you don't have to touch it though.
+    include       /etc/nginx/mime.types;
+
+    access_log    /var/log/nginx/access.log;
+
+    default_type       application/octet-stream;
+
+    sendfile        on;
+    #tcp_nopush     on;
+
+    #keepalive_timeout  0;
+    keepalive_timeout  65;
+    tcp_nodelay        on;
+
+    # Turn off compression if there is a caching server in front of Nginx.
+    # Play around with optimizing buffer size and ect. based on your needs.
+    #gzip  on;
+    #gzip_min_length  1100;
+    #gzip_buffers     4 8k;
+    #gzip_types       text/plain;
+    #gzip_disable "MSIE [1-6]\.(?!.*SV1)";
+
+    # Include other configs..
+    include /etc/nginx/conf.d/*.conf;
+    include /etc/nginx/sites-enabled/*;
+}</pre>
+
+<p>Example <code>/etc/nginx/sites-available/default</code>:</p>
+<pre class="prettyprint"># Specify the number of backend servers along with how you want them
+# distrbuted. You can use domain name, IP address, port, or unix sockets.
+# By default, Nginx uses round robin. Stick with IP addresses and ports.
+# See Backend Servers section on how to set up multple instances on one
+# machine.
+
+upstream backend {
+    server 127.0.0.1:5000; 
+    server 127.0.0.1:5001;
+    server 127.0.0.2:5000; 
+    #server 127.0.0.2:5001 weight=5;
+    #server bobscomputer;
+    #server unix:/tmp/starman.pid;
+}
+
+server {
+    # Port 80 is implied but with a caching server in front, you need a
+    # different port. 
+    #listen        80;
+    server_name   mydomain.com;
+
+    # It is recommended you create a separate access log for the server.
+    access_log  /var/log/nginx/access_server.log;
+
+    # Serve static files using Nginx thus allowing Dancer to handle more
+    # dynamic content requests.
+    # Huge performance boost! First you must move all your
+    # static ('/public') folder to the same server as Nginx or accessible
+    # from by Nginx over the network.
+    location ^~ (/images/|/css/|/javascripts/) {
+        root /var/www/myapp/public;
+        expires 30d;
+    }
+
+    # This is where all magic happens. Everything in this block goes
+    # directly to Dancer. What's going on?
+    # We set specific headers that L&lt;Plack::Middleware::ReverseProxy&gt;
+    # expects. Using this information,
+    # it overwrites certain environmental variables with the values we want.
+    # When Dancer receives it, 
+    # it's as if Dancer is facing the intertubes.  
+    location / {
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_pass       http://backend;
+    }
+    # Note: If you add a frontend caching server, the above section will
+    # have to change completely 
+    # along with serveral other things.
+}</pre>
+
+<h3><a name="http_1_1_vs_http_1_0"></a>HTTP 1.1 vs HTTP 1.0</h3>
+
+<p>Though Nginx communicates in HTTP 1.1 to the client, it uses HTTP 1.0 for the
+backends. If you need keep-alives or chunked requests/responses, then you can
+either try some 3rd party patches or you can use something like <b>HA Proxy</b>.
+This shouldn't be a problem for an overwhelming majority of users and won't
+affect the backend server since most HTTP 1.1 servers simply switch to HTTP 1.0
+when not available.</p>
+<h2><a name="plack__middleware__reverseproxy"></a>Plack::Middleware::ReverseProxy</h2>
+
+<p><a href="https://metacpan.org/module/Plack::Middleware::ReverseProxy">Plack::Middleware::ReverseProxy</a> solves a problem associated with reverse
+proxy. When the request is sent from the intertubes to your frontend server,
+that request is forwarded to a backend server. That backend server believes that
+the request originated from the frontend server and not the intertubes. Thus the
+IP address and other environment variables are associated with the frontend
+server. When your logs/debug says that 100% of your users came from 192.168.1.10
+or similar then there's a problem.</p>
+<p><a href="https://metacpan.org/module/Plack::Middleware::ReverseProxy">Plack::Middleware::ReverseProxy</a> reads these special headers sent from the
+frontend server that include the correct information. It takes that information
+and overwrites the environmental variables before sending those values to your
+Dancer application. Thus Dancer is none the wiser.</p>
+<p>Remember to add <a href="https://metacpan.org/module/Plack::Middleware::ReverseProxy">Plack::Middleware::ReverseProxy</a> to your <i>config.yml</i> same as
+with any other middleware.</p>
+<h2><a name="backend_server__starman_twiggy_etc_"></a>Backend Server: Starman/Twiggy/etc.</h2>
+
+<p>The backend server really depends on your needs. <a href="https://metacpan.org/module/Starman">Starman</a> offers the best
+performance. Set the number of workers based on your server specs.</p>
+<pre class="prettyprint">plackup -D -E deployment -s Starman --workers=10 -a app.pl -p 5000</pre>
+
+<p>Dancer unofficially supports Websockets and other streaming processes via
+<a href="https://metacpan.org/module/Web::Hippie">Web::Hippie</a> in which case you would need to use a non-blocking, async server
+such as <a href="https://metacpan.org/module/Twiggy">Twiggy</a>.</p>
+<p><i>(Don't worry about it since it's not official yet)</i></p>
+<pre class="prettyprint">plackup -D -E deployment -s Twiggy -a app.pl -p 5000</pre>
+
+<p>If you plan to use a non-preforking, single-threaded server, make sure to start
+one instance per CPU core. Adjust <i>nginx.conf</i> accordingly, and restart Nginx.</p>
+<pre class="prettyprint">plackup -D -E deployment -s HTTP::Server::PSGI -a app.pl -p 5000
+plackup -D -E deployment -s HTTP::Server::PSGI -a app.pl -p 5001
+plackup -D -E deployment -s HTTP::Server::PSGI -a app.pl -p 5002
+plackup -D -E deployment -s HTTP::Server::PSGI -a app.pl -p 5003</pre>
+
+<ul>
+<li><a name="item_Note__1_"></a><b>Note #1:</b>
+<p>Using HTTP::Server::PSGI is <b>NOT</b> a good idea for production. Just using it as
+an example.</p>
+</li>
+<li><a name="item_Note__2_"></a><b>Note #2:</b>
+<p>Sometimes the <code>-D</code> option in plackup doesn't properly daemonize the server
+since it's the backend server's responsibility to respect this option. A cheap
+way to force a process to daemonize is to use <code>nohup plackup ... &amp;</code>.</p>
+</li>
+<li><a name="item_Note__3_"></a><b>Note #3:</b>
+<p>It's probably a good idea to create a start up script that launches your servers
+and initialises the environment in the background.</p>
+</li>
+</ul>
+<h2><a name="caching"></a>Caching</h2>
+
+<p>Caching is up to you, your application's needs and your personal preferences.
+Usually it's best to use URL matching. I suggest putting a caching server in
+front of Nginx such as Varnish or Squid. The request flow should be:</p>
+<p>Intertubes -&gt; Varnish -&gt; Nginx -&gt; Starman backends</p>
+<h2><a name="see_also"></a>See also</h2>
+
+<p><a href="https://metacpan.org/module/Dancer::Deployment">Dancer::Deployment</a></p>
+<h2><a name="author"></a>Author</h2>
+
+<p>This article has been written by nmani (Naveen Manivannan 
+<code>&lt;nmani@nashresearch.com&gt;</code>) for the Perl Dancer Advent Calendar 2010.</p>
+</div>
+
+ <div id="disqus_thread"></div>
+    <script type="text/javascript">
+        /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+        var disqus_shortname = 'danceradvent'; // required: replace example with your forum shortname
+
+        /* * * DON'T EDIT BELOW THIS LINE * * */
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+
+
+
+</div>
+
+
+
+<div id="footer">
+Powered by the  
+<a href="http://perldancer.org/" title="Perl Dancer - Perl web framework">
+Dancer Perl web framework</a>
+</div>
+</div>
+
+
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-25174467-2']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+</body>
+</html>
